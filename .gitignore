@@ -1,0 +1,16 @@
+# Переменные окружения
+.env
+
+# Скомпилированные бинарники
+/go-secure-auth-service
+*.exe
+*.test
+
+# Артефакты сборки и покрытия
+*.out
+coverage.txt
+
+# IDE и системные файлы
+.idea/
+.vscode/
+.DS_Store
