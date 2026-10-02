@@ -10,9 +10,20 @@ import (
 	"testing"
 )
 
+// failOrSkip: в CI недоступная БД — это ошибка, локально — пропуск теста
+// GitHub Actions выставляет CI=true, локально переменная не задана
+func failOrSkip(t *testing.T, format string, args ...any) {
+	t.Helper()
+	if os.Getenv("CI") != "" {
+		t.Fatalf(format, args...)
+	}
+	t.Skipf(format, args...)
+}
+
 // setupTestDB пытается поднять подключение к тестовой базе данных
-// Если БД недоступна, тест, вызвавший эту функцию, пропускается — сценарии, требующие реальной БД
+// Локально без БД тест, вызвавший эту функцию, пропускается — сценарии, требующие реальной БД
 // (успешная регистрация, дубликаты email/username), не могут быть проверены без поднятого PostgreSQL
+// В CI недоступная БД — ошибка, чтобы зелёный job не скрывал пропущенные интеграционные тесты
 func setupTestDB(t *testing.T) {
 	t.Helper()
 
@@ -29,7 +40,7 @@ func setupTestDB(t *testing.T) {
 	os.Setenv("DB_NAME", getEnv("TEST_DB_NAME", "secure_service"))
 
 	if err := InitDB(); err != nil {
-		t.Skip("skipping: test database is not available (" + err.Error() + ")")
+		failOrSkip(t, "test database is not available (%v)", err)
 	}
 }
 
@@ -100,8 +111,8 @@ func TestRegisterHandler_WeakPassword(t *testing.T) {
 	}
 }
 
-// Тесты ниже требуют реальной базы данных (поднятой через docker-compose up -d)
-// Если БД недоступна, они пропускаются
+// Тесты ниже требуют реальной базы данных (поднятой через docker compose up -d)
+// Локально без БД — пропускаются; в CI без БД — падают
 
 func TestRegisterHandler_Success(t *testing.T) {
 	setupTestDB(t)
